@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# Script for service that unbinds a NVME drive from the nvme driver
+# add dynamically binds to the vfio-pci driver and vice-versa
+# Note you will want to change the NVME PCI ID and Vendor:Device ID
+# depending on your system.
+
+#What:		/sys/bus/pci/drivers/.../unbind
+#Description:
+#		Writing a device location to this file will cause the
+#		driver to attempt to unbind from the device found at
+#		this location.	This may be useful when overriding default
+#		bindings.  The format for the location is: DDDD:BB:DD.F.
+#		That is Domain:Bus:Device.Function and is the same as
+#		found in /sys/bus/pci/devices/. For example::
+#
+#		  # echo 0000:00:19.0 > /sys/bus/pci/drivers/foo/unbind
+#
+#		(Note: kernels before 2.6.28 may require echo -n).
+#
+#What:		/sys/bus/pci/drivers/.../new_id
+#Description:
+#		Writing a device ID to this file will attempt to
+#		dynamically add a new device ID to a PCI device driver.
+#		This may allow the driver to support more hardware than
+#		was included in the driver's static device ID support
+#		table at compile time.  The format for the device ID is:
+#		VVVV DDDD SVVV SDDD CCCC MMMM PPPP.  That is Vendor ID,
+#		Device ID, Subsystem Vendor ID, Subsystem Device ID,
+#		Class, Class Mask, and Private Driver Data.  The Vendor ID
+#		and Device ID fields are required, the rest are optional.
+#		Upon successfully adding an ID, the driver will probe
+#		for the device and attempt to bind to it.  For example::
+#
+#		  # echo "8086 10f5" > /sys/bus/pci/drivers/foo/new_id
+#
+#What:		/sys/bus/pci/drivers/.../remove_id
+#Description:
+#		Writing a device ID to this file will remove an ID
+#		that was dynamically added via the new_id sysfs entry.
+#		The format for the device ID is:
+#		VVVV DDDD SVVV SDDD CCCC MMMM.	That is Vendor ID, Device
+#		ID, Subsystem Vendor ID, Subsystem Device ID, Class,
+#		and Class Mask.  The Vendor ID and Device ID fields are
+#		required, the rest are optional.  After successfully
+#		removing an ID, the driver will no longer support the
+#		device.  This is useful to ensure auto probing won't
+#		match the driver to the device.  For example::
+#
+#		  # echo "8086 10f5" > /sys/bus/pci/drivers/foo/remove_id
+
+bind() {
+  if lspci -nnks 1:00.0 | grep nvme; then
+    echo "0000:01:00.0" >/sys/bus/pci/drivers/nvme/unbind &&
+      echo "1987 5016" >/sys/bus/pci/drivers/vfio-pci/new_id
+  fi
+}
+
+unbind() {
+  if lspci -nnks 1:00.0 | grep vfio-pci; then
+    echo "0000:01:00.0" >/sys/bus/pci/drivers/vfio-pci/unbind &&
+      echo "1987 5016" >/sys/bus/pci/drivers/nvme/new_id
+  fi
+}
+
+case $1 in
+bind | unbind) "$1" ;;
+esac

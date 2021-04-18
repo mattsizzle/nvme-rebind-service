@@ -1,0 +1,16 @@
+[Unit]
+Description=Rebind the NVMe01 drive between NVME and VFIO-PCI drivers
+Before=pvesr.service
+Wants=pve-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nvme0n1-rebind bind
+ExecStop=/usr/bin/nvme0n1-rebind unbind
+StandardOutput=syslog
+StandardError=syslog
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+Alias=nvme0n1-rebind.service
