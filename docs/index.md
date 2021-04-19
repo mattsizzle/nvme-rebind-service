@@ -1,37 +1,34 @@
-## Welcome to GitHub Pages
+# nvme-rebind-service
 
-You can use the [editor on GitHub](https://github.com/mgreen86/nvme-rebind-service/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+systemd service to rebind a NVMe drive to the vfio-pci driver before Proxmox starts. \
+I created this script as the `nvme` drive is built into the Proxmox kernel and I didn't \
+want to modify the base system as puppet controls my host node lifecycles.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### Files
 
-### Markdown
+#### pve-manager.service ( The service unit defintion )
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+This file is placed at `/etc/systemd/system/pve-manager.service` and should be \
+enabled at startup.
 
-```markdown
-Syntax highlighted code block
+#### nvme0n1-rebind
 
-# Header 1
-## Header 2
-### Header 3
+This file is placed at `/usr/bin/nvme0n1-rebind` and handles this (un)binding \
+and (re)mounting of a specific NVMe drive by toggling between the `nvme` and \
+`vfio-pci` drivers. It needs to be executable.
 
-- Bulleted
-- List
+### Notes
 
-1. Numbered
-2. List
+This script is not currently a copy pasta solution as it has hardcoded values. If you \
+stumble upon this script and decided it meets your needs please ensure you change the \
+values to match your system configuration.
 
-**Bold** and _Italic_ and `Code` text
+### Example Output
 
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/mgreen86/nvme-rebind-service/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+    root@proxmox:~# systemctl status nvme0n1-rebind.service
+        nvme0n1-rebind.service - Rebind the NVMe01 Drive to VFIO-PCI
+        Loaded: loaded (/etc/systemd/system/nvme0n1-rebind.service; enabled; vendor preset: enabled)
+        Active: inactive (dead) since Sun 2021-04-18 18:27:06 CDT; 3s ago
+        Process: 17762 ExecStart=/usr/bin/nvme0n1-rebind bind (code=exited, status=0/SUCCESS)
+        Process: 17779 ExecStop=/usr/bin/nvme0n1-rebind unbind (code=exited, status=0/SUCCESS)
+        Main PID: 17762 (code=exited, status=0/SUCCESS)
